@@ -29,9 +29,9 @@ async fn main() -> Result<(), rocket::Error> {
         .await
         .expect("Failed to initialize database pool");
 
-    if let Err(e) = db::run_migrations(&db_pool).await {
-        tracing::error!("Failed to run migrations: {:?}", e);
-    }
+    db::run_migrations(&db_pool)
+        .await
+        .expect("Failed to run migrations");
 
     let jwt_manager = auth::JwtManager::new(&config.jwt_secret, 24);
 
