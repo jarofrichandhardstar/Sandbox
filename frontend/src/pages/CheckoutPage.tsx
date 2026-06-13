@@ -5,7 +5,6 @@ import { ordersApi } from '../api/orders'
 import { ApiError } from '../api/client'
 import type { ShippingCoverageResponse } from '../types'
 import Alert from '../components/Alert'
-import Spinner from '../components/Spinner'
 
 type Step = 'shipping' | 'payment' | 'confirm'
 
