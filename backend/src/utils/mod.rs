@@ -1,5 +1,6 @@
 // Utility functions and constants
 
+pub mod email;
 pub mod images;
 
 pub const DEFAULT_PAGE_SIZE: i64 = 20;

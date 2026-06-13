@@ -17,6 +17,10 @@ export interface AuthResponse {
   token: string
 }
 
+export interface RegisterResponse {
+  email: string
+}
+
 export interface PublishedProduct {
   id: string
   name: string

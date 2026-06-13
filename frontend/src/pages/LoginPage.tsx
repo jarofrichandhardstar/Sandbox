@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ApiError } from '../api/client'
@@ -9,10 +9,15 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: string })?.from ?? '/'
+  const successMsg = (location.state as { message?: string })?.message
 
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (successMsg) setError('')
+  }, [successMsg])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -22,6 +27,10 @@ export default function LoginPage() {
       await login(form.email, form.password)
       navigate(from, { replace: true })
     } catch (err) {
+      if (err instanceof ApiError && err.message === 'email_not_verified') {
+        navigate(`/verify-email?email=${encodeURIComponent(form.email)}`)
+        return
+      }
       setError(err instanceof ApiError ? err.message : 'Login failed')
     } finally {
       setLoading(false)
@@ -33,6 +42,9 @@ export default function LoginPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Sign in</h1>
 
+        {successMsg && (
+          <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{successMsg}</div>
+        )}
         {error && <Alert message={error} className="mb-4" />}
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -47,7 +59,12 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <Link to="/forgot-password" className="text-xs text-indigo-600 hover:text-indigo-500">
+                Forgot password?
+              </Link>
+            </div>
             <input
               type="password"
               required
@@ -67,9 +84,7 @@ export default function LoginPage() {
 
         <p className="mt-4 text-center text-sm text-gray-600">
           Don't have an account?{' '}
-          <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-            Sign up
-          </Link>
+          <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500">Sign up</Link>
         </p>
       </div>
     </div>

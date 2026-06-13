@@ -11,7 +11,7 @@ interface AuthState {
 
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, username: string, password: string) => Promise<void>
+  loginWithToken: (user: UserResponse, token: string) => void
   logout: () => void
 }
 
@@ -26,15 +26,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const token = localStorage.getItem('token')
-    if (!token) {
-      setState(s => ({ ...s, isLoading: false }))
-      return
-    }
+    if (!token) { setState(s => ({ ...s, isLoading: false })); return }
     authApi
       .getProfile()
-      .then(res => {
-        setState({ user: res.data, token, isLoading: false })
-      })
+      .then(res => setState({ user: res.data ?? null, token, isLoading: false }))
       .catch(() => {
         localStorage.removeItem('token')
         setState({ user: null, token: null, isLoading: false })
@@ -48,11 +43,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ user: res.data.user, token: res.data.token, isLoading: false })
   }
 
-  const register = async (email: string, username: string, password: string) => {
-    const res = await authApi.register(email, username, password)
-    if (!res.data) throw new Error('Registration failed')
-    localStorage.setItem('token', res.data.token)
-    setState({ user: res.data.user, token: res.data.token, isLoading: false })
+  const loginWithToken = (user: UserResponse, token: string) => {
+    localStorage.setItem('token', token)
+    setState({ user, token, isLoading: false })
   }
 
   const logout = () => {
@@ -61,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout }}>
+    <AuthContext.Provider value={{ ...state, login, loginWithToken, logout }}>
       {children}
     </AuthContext.Provider>
   )

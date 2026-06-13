@@ -39,7 +39,8 @@ pub struct User {
     pub email: String,
     pub username: String,
     pub password_hash: String,
-    pub role: String, // "admin" or "user"
+    pub role: String,
+    pub is_verified: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -50,6 +51,38 @@ pub struct RegisterRequest {
     pub email: String,
     pub username: String,
     pub password: String,
+}
+
+// Registration response (no token yet — email must be verified first)
+#[derive(Debug, Serialize)]
+pub struct RegisterResponse {
+    pub email: String,
+}
+
+// Email verification request
+#[derive(Debug, Deserialize)]
+pub struct VerifyEmailRequest {
+    pub email: String,
+    pub otp: String,
+}
+
+// Resend OTP request
+#[derive(Debug, Deserialize)]
+pub struct ResendOtpRequest {
+    pub email: String,
+}
+
+// Forgot password request
+#[derive(Debug, Deserialize)]
+pub struct ForgotPasswordRequest {
+    pub email: String,
+}
+
+// Reset password request
+#[derive(Debug, Deserialize)]
+pub struct ResetPasswordRequest {
+    pub token: String,
+    pub new_password: String,
 }
 
 // Login request DTO

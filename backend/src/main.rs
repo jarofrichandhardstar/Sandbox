@@ -34,7 +34,8 @@ async fn main() -> Result<(), rocket::Error> {
         .await
         .expect("Failed to run migrations");
 
-    let jwt_manager = auth::JwtManager::new(&config.jwt_secret, 24);
+    let jwt_manager  = auth::JwtManager::new(&config.jwt_secret, 24);
+    let email_svc    = utils::email::EmailService::from_config(&config);
 
     let figment = rocket::Config::figment()
         .merge(("address", "0.0.0.0"))
@@ -44,11 +45,16 @@ async fn main() -> Result<(), rocket::Error> {
         .attach(cors::Cors)
         .manage(db_pool)
         .manage(jwt_manager)
+        .manage(email_svc)
         .mount("/", routes![handlers::health_check, cors::preflight])
         .mount("/api", routes![
             handlers::register,
+            handlers::verify_email,
+            handlers::resend_otp,
             handlers::login,
             handlers::get_profile,
+            handlers::forgot_password,
+            handlers::reset_password,
             handlers::orders::checkout,
             handlers::orders::estimate_shipping,
             handlers::content::list_public_content,
