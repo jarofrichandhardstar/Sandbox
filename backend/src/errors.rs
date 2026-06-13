@@ -41,7 +41,7 @@ pub struct ErrorResponse {
 }
 
 impl<'r> Responder<'r, 'static> for ApiError {
-    async fn respond_to(self, _: &'r Request<'_>) -> response::Result<'static> {
+    fn respond_to(self, _: &'r Request<'_>) -> response::Result<'static> {
         let (status, message) = match self {
             ApiError::Database(_) => (Status::InternalServerError, "Database error"),
             ApiError::NotFound => (Status::NotFound, "Not found"),
@@ -63,7 +63,7 @@ impl<'r> Responder<'r, 'static> for ApiError {
         response::Response::build()
             .status(status)
             .header(rocket::http::ContentType::JSON)
-            .sized_body(Some(body.len()), Cursor::new(body))
+            .sized_body(body.len(), Cursor::new(body))
             .ok()
     }
 }

@@ -1,4 +1,12 @@
+pub mod admin;
+pub mod content;
+pub mod orders;
+pub mod products;
+
 use rocket::{http::Status, serde::json::Json, State};
+use uuid::Uuid;
+use chrono::Utc;
+
 use crate::{
     auth::JwtManager,
     db::DbPool,
@@ -7,8 +15,6 @@ use crate::{
     middleware::AuthGuard,
 };
 use bcrypt::{hash, verify, DEFAULT_COST};
-use chrono::Utc;
-use uuid::Uuid;
 
 // Health check endpoint
 #[rocket::get("/health")]
@@ -62,9 +68,9 @@ pub async fn register(
     let now = Utc::now();
 
     let user: User = sqlx::query_as(
-        "INSERT INTO users (id, email, username, password_hash, created_at, updated_at) 
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING id, email, username, password_hash, created_at, updated_at"
+        "INSERT INTO users (id, email, username, password_hash, role, created_at, updated_at) 
+         VALUES ($1, $2, $3, $4, 'user', $5, $6)
+         RETURNING id, email, username, password_hash, role, created_at, updated_at"
     )
     .bind(user_id)
     .bind(&req.email)
@@ -109,7 +115,7 @@ pub async fn login(
 
     // Fetch user
     let user: User = sqlx::query_as(
-        "SELECT id, email, username, password_hash, created_at, updated_at FROM users WHERE email = $1"
+        "SELECT id, email, username, password_hash, role, created_at, updated_at FROM users WHERE email = $1"
     )
     .bind(&req.email)
     .fetch_optional(pool.inner())
@@ -145,7 +151,7 @@ pub async fn get_profile(
     pool: &State<DbPool>,
 ) -> Result<Json<ApiResponse<UserResponse>>> {
     let user: User = sqlx::query_as(
-        "SELECT id, email, username, password_hash, created_at, updated_at FROM users WHERE id = $1"
+        "SELECT id, email, username, password_hash, role, created_at, updated_at FROM users WHERE id = $1"
     )
     .bind(Uuid::parse_str(&guard.claims.sub).map_err(|_| ApiError::InvalidToken)?)
     .fetch_optional(pool.inner())
