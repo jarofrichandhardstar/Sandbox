@@ -56,8 +56,11 @@ pub async fn register(
         return Err(ApiError::UserAlreadyExists);
     }
 
-    // Hash password
-    let password_hash = hash(&req.password, DEFAULT_COST)
+    // Hash password (blocking — run off the async executor)
+    let password = req.password.clone();
+    let password_hash = tokio::task::spawn_blocking(move || hash(&password, DEFAULT_COST))
+        .await
+        .map_err(|_| ApiError::InternalError)?
         .map_err(|e| {
             tracing::error!("Password hashing error: {}", e);
             ApiError::InternalError
@@ -126,12 +129,17 @@ pub async fn login(
     })?
     .ok_or(ApiError::InvalidCredentials)?;
 
-    // Verify password
-    verify(&req.password, &user.password_hash)
-        .map_err(|_| {
-            tracing::warn!("Invalid password for user: {}", user.email);
-            ApiError::InvalidCredentials
-        })?;
+    // Verify password (blocking — run off the async executor)
+    let password = req.password.clone();
+    let hash = user.password_hash.clone();
+    let valid = tokio::task::spawn_blocking(move || verify(&password, &hash))
+        .await
+        .map_err(|_| ApiError::InternalError)?
+        .map_err(|_| ApiError::InvalidCredentials)?;
+    if !valid {
+        tracing::warn!("Invalid password for user: {}", user.email);
+        return Err(ApiError::InvalidCredentials);
+    }
 
     // Generate token
     let token = jwt_manager.generate_token(user.id, &user.email)?;

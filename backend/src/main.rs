@@ -1,5 +1,6 @@
 mod auth;
 mod config;
+mod cors;
 mod db;
 mod errors;
 mod handlers;
@@ -40,9 +41,10 @@ async fn main() -> Result<(), rocket::Error> {
         .merge(("port", config.port));
 
     rocket::custom(figment)
+        .attach(cors::Cors)
         .manage(db_pool)
         .manage(jwt_manager)
-        .mount("/", routes![handlers::health_check])
+        .mount("/", routes![handlers::health_check, cors::preflight])
         .mount("/api", routes![
             handlers::register,
             handlers::login,
