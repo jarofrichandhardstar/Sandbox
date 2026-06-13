@@ -67,9 +67,11 @@ export default function Navbar() {
                 <Link to="/profile" className="text-sm text-gray-600 hover:text-indigo-600">
                   {user.username}
                 </Link>
-                <Link to="/admin" className="text-sm text-gray-600 hover:text-indigo-600">
-                  Admin
-                </Link>
+                {user.role === 'admin' && (
+                  <Link to="/admin" className="text-sm text-gray-600 hover:text-indigo-600">
+                    Admin
+                  </Link>
+                )}
                 <button
                   onClick={handleLogout}
                   className="text-sm text-gray-600 hover:text-indigo-600"

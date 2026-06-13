@@ -72,6 +72,7 @@ pub struct UserResponse {
     pub id: String,
     pub email: String,
     pub username: String,
+    pub role: String,
     pub created_at: String,
 }
 
@@ -81,6 +82,7 @@ impl From<User> for UserResponse {
             id: user.id.to_string(),
             email: user.email,
             username: user.username,
+            role: user.role,
             created_at: user.created_at.to_rfc3339(),
         }
     }
