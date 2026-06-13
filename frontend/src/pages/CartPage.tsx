@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { useCart } from '../context/CartContext'
 import { ApiError } from '../api/client'
 import Spinner from '../components/Spinner'
-import Alert from '../components/Alert'
 
 export default function CartPage() {
   const { items, isLoading, updateItem, removeItem } = useCart()

@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { ordersApi } from '../api/orders'
 import { ApiError } from '../api/client'
-import type { ShippingCoverageResponse, OrderResponse } from '../types'
+import type { ShippingCoverageResponse } from '../types'
 import Alert from '../components/Alert'
 import Spinner from '../components/Spinner'
 

@@ -23,7 +23,7 @@ export default function InventoryPage() {
 
   useEffect(load, [])
 
-  const handleTogglePublish = async (id: string, current: boolean) => {
+  const handleTogglePublish = async (id: string) => {
     setActionError('')
     try {
       const res = await adminApi.togglePublish(id)
@@ -124,7 +124,7 @@ export default function InventoryPage() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     <button
-                      onClick={() => handleTogglePublish(item.id, item.is_published)}
+                      onClick={() => handleTogglePublish(item.id)}
                       className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
                         item.is_published
                           ? 'bg-green-100 text-green-700 hover:bg-green-200'
