@@ -7,12 +7,10 @@ mod middleware;
 mod models;
 mod utils;
 
-use rocket::{launch, routes, State};
-use tracing_subscriber;
+use rocket::routes;
 
-#[launch]
-fn rocket() -> _ {
-    // Initialize tracing
+#[rocket::main]
+async fn main() -> Result<(), rocket::Error> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::from_default_env()
@@ -20,42 +18,27 @@ fn rocket() -> _ {
         )
         .init();
 
-    // Initialize upload directory for images
     if let Err(e) = crate::utils::images::ensure_upload_dir() {
         tracing::error!("Failed to initialize upload directory: {:?}", e);
     }
 
-    // Load configuration
     let config = config::Config::from_env();
     tracing::info!("Starting server on port {}", config.port);
 
-    // Initialize database pool
-    let db_pool = tokio::task::block_in_place(|| {
-        tokio::runtime::Handle::current().block_on(async {
-            db::init_pool(&config)
-                .await
-                .expect("Failed to initialize database pool")
-        })
-    });
+    let db_pool = db::init_pool(&config)
+        .await
+        .expect("Failed to initialize database pool");
 
-    // Run database migrations
-    if let Err(e) = tokio::task::block_in_place(|| {
-        tokio::runtime::Handle::current().block_on(async {
-            db::run_migrations(&db_pool).await
-        })
-    }) {
+    if let Err(e) = db::run_migrations(&db_pool).await {
         tracing::error!("Failed to run migrations: {:?}", e);
     }
 
-    // Initialize JWT manager
     let jwt_manager = auth::JwtManager::new(&config.jwt_secret, 24);
 
-    // Bind to 0.0.0.0 using PORT env var (required for Railway / containers)
     let figment = rocket::Config::figment()
         .merge(("address", "0.0.0.0"))
         .merge(("port", config.port));
 
-    // Mount routes
     rocket::custom(figment)
         .manage(db_pool)
         .manage(jwt_manager)
@@ -103,4 +86,8 @@ fn rocket() -> _ {
         .mount("/api", routes![
             handlers::products::serve_product_image,
         ])
+        .launch()
+        .await?;
+
+    Ok(())
 }
