@@ -31,7 +31,7 @@ pub async fn create_inventory(
     }
 
     // Check if SKU already exists
-    let existing: Option<(String,)> = sqlx::query_as("SELECT id FROM inventory_items WHERE sku = $1")
+    let existing: Option<(Uuid,)> = sqlx::query_as("SELECT id FROM inventory_items WHERE sku = $1")
         .bind(&req.sku)
         .fetch_optional(pool.inner())
         .await
@@ -259,7 +259,7 @@ pub async fn delete_inventory(
     let item_id = Uuid::parse_str(&id).map_err(|_| ApiError::BadRequest("Invalid ID format".to_string()))?;
 
     // Verify item exists
-    let _: (String,) = sqlx::query_as("SELECT id FROM inventory_items WHERE id = $1")
+    let _: (Uuid,) = sqlx::query_as("SELECT id FROM inventory_items WHERE id = $1")
         .bind(item_id)
         .fetch_optional(pool.inner())
         .await
@@ -430,7 +430,7 @@ pub async fn create_stock(
     let item_id = Uuid::parse_str(&inventory_id).map_err(|_| ApiError::BadRequest("Invalid ID format".to_string()))?;
 
     // Verify inventory item exists
-    let _: (String,) = sqlx::query_as("SELECT id FROM inventory_items WHERE id = $1")
+    let _: (Uuid,) = sqlx::query_as("SELECT id FROM inventory_items WHERE id = $1")
         .bind(item_id)
         .fetch_optional(pool.inner())
         .await
@@ -441,7 +441,7 @@ pub async fn create_stock(
         .ok_or(ApiError::NotFound)?;
 
     // Check if stock already exists
-    let existing: Option<(String,)> = sqlx::query_as(
+    let existing: Option<(Uuid,)> = sqlx::query_as(
         "SELECT id FROM stock WHERE inventory_item_id = $1"
     )
     .bind(item_id)
@@ -497,7 +497,7 @@ pub async fn upload_product_image(
     let item_id = Uuid::parse_str(&id).map_err(|_| ApiError::BadRequest("Invalid ID format".to_string()))?;
 
     // Verify inventory item exists
-    let _: (String,) = sqlx::query_as("SELECT id FROM inventory_items WHERE id = $1")
+    let _: (Uuid,) = sqlx::query_as("SELECT id FROM inventory_items WHERE id = $1")
         .bind(item_id)
         .fetch_optional(pool.inner())
         .await
