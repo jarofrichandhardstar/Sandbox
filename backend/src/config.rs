@@ -7,12 +7,16 @@ pub struct Config {
     pub jwt_secret:   String,
     pub port:         u16,
     pub log_level:    String,
-    // Email / SMTP
+    // Email — HTTP API providers (preferred on Railway)
+    pub resend_api_key:   Option<String>,
+    pub sendgrid_api_key: Option<String>,
+    // Email — SMTP fallback (blocked by Railway; works on other hosts)
     pub smtp_host:     Option<String>,
     pub smtp_port:     u16,
     pub smtp_user:     Option<String>,
     pub smtp_password: Option<String>,
-    pub smtp_from:     String,
+    // Sender address used by all email methods
+    pub smtp_from: String,
     // Frontend URL (used in password-reset links)
     pub app_url: String,
 }
@@ -30,12 +34,14 @@ impl Config {
                 .parse()
                 .unwrap_or(8000),
             log_level: env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string()),
-            smtp_host:     env::var("SMTP_HOST").ok(),
-            smtp_port:     env::var("SMTP_PORT").ok().and_then(|p| p.parse().ok()).unwrap_or(587),
-            smtp_user:     env::var("SMTP_USER").ok(),
-            smtp_password: env::var("SMTP_PASSWORD").ok(),
-            smtp_from:     env::var("SMTP_FROM").unwrap_or_else(|_| "noreply@shop.com".to_string()),
-            app_url:       env::var("APP_URL").unwrap_or_default(),
+            resend_api_key:   env::var("RESEND_API_KEY").ok(),
+            sendgrid_api_key: env::var("SENDGRID_API_KEY").ok(),
+            smtp_host:        env::var("SMTP_HOST").ok(),
+            smtp_port:        env::var("SMTP_PORT").ok().and_then(|p| p.parse().ok()).unwrap_or(587),
+            smtp_user:        env::var("SMTP_USER").ok(),
+            smtp_password:    env::var("SMTP_PASSWORD").ok(),
+            smtp_from:        env::var("SMTP_FROM").unwrap_or_else(|_| "noreply@shop.com".to_string()),
+            app_url:          env::var("APP_URL").unwrap_or_default(),
         }
     }
 }
