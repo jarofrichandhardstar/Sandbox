@@ -34,14 +34,15 @@ export default function ProductCard({ product }: { product: PublishedProduct }) 
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-      <Link to={`/products/${product.id}`} className="block">
-        <div className="aspect-square bg-gray-100 overflow-hidden">
+    <div className="group flex flex-col">
+      {/* Image */}
+      <Link to={`/products/${product.id}`} className="block overflow-hidden bg-gray-100 relative">
+        <div className="aspect-[4/5]">
           {resolveImageUrl(product.image_url) ? (
             <img
               src={resolveImageUrl(product.image_url)}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-300">
@@ -51,52 +52,44 @@ export default function ProductCard({ product }: { product: PublishedProduct }) 
             </div>
           )}
         </div>
+        {!product.in_stock && (
+          <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
+            <span className="text-xs uppercase tracking-widest text-gray-500 bg-white px-3 py-1">Out of Stock</span>
+          </div>
+        )}
       </Link>
 
-      <div className="p-4 flex flex-col flex-1 gap-2">
-        <Link to={`/products/${product.id}`}>
-          <h3 className="font-semibold text-gray-900 hover:text-indigo-600 line-clamp-2">
+      {/* Info */}
+      <div className="mt-4 flex-1 flex flex-col">
+        <Link to={`/products/${product.id}`} className="group/name">
+          <h3 className="text-sm font-medium text-gray-900 group-hover/name:underline line-clamp-2 leading-snug">
             {product.name}
           </h3>
         </Link>
-        <p className="text-xs text-gray-500 uppercase tracking-wide">{product.sku}</p>
-        <p className="text-sm text-gray-600 line-clamp-2 flex-1">{product.description}</p>
+        <p className="mt-1 text-sm text-gray-500">{format(product.price)}</p>
 
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-lg font-bold text-gray-900">
-            {format(product.price)}
-          </span>
-          <span
-            className={`text-xs font-medium px-2 py-1 rounded-full ${
-              product.in_stock
-                ? 'bg-green-100 text-green-700'
-                : 'bg-red-100 text-red-700'
-            }`}
-          >
-            {product.in_stock ? 'In stock' : 'Out of stock'}
-          </span>
+        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+
+        <div className="mt-4">
+          {token ? (
+            <button
+              onClick={handleAdd}
+              disabled={adding || !product.in_stock}
+              style={{ backgroundColor: cartBtnColor }}
+              className="w-full py-2.5 text-xs font-medium tracking-widest uppercase text-white hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {adding ? 'Adding…' : added ? 'Added!' : 'Add to Cart'}
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="block text-center w-full py-2.5 text-xs font-medium tracking-widest uppercase text-white hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: cartBtnColor }}
+            >
+              Login to Buy
+            </Link>
+          )}
         </div>
-
-        {error && <p className="text-xs text-red-600">{error}</p>}
-
-        {token ? (
-          <button
-            onClick={handleAdd}
-            disabled={adding || !product.in_stock}
-            style={{ backgroundColor: cartBtnColor }}
-            className="mt-1 w-full rounded-lg py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-          >
-            {adding ? 'Adding…' : added ? 'Added!' : 'Add to cart'}
-          </button>
-        ) : (
-          <Link
-            to="/login"
-            className="mt-1 block text-center w-full rounded-lg py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: cartBtnColor }}
-          >
-            Login to buy
-          </Link>
-        )}
       </div>
     </div>
   )

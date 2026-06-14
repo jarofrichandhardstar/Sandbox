@@ -57,13 +57,13 @@ export default function ProductDetailPage() {
 
   return (
     <div>
-      <Link to="/" className="text-sm text-indigo-600 hover:underline mb-6 inline-block">
-        ← Back to products
+      <Link to="/" className="text-xs uppercase tracking-widest text-gray-400 hover:text-gray-700 mb-8 inline-flex items-center gap-2 transition-colors">
+        ← Back
       </Link>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
-          <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden">
+      <div className="bg-white overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20">
+          <div className="aspect-square bg-gray-100 overflow-hidden">
             {resolveImageUrl(product.image_url) ? (
               <img
                 src={resolveImageUrl(product.image_url)}
