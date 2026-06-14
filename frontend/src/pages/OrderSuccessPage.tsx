@@ -1,9 +1,11 @@
 import { useLocation, Link } from 'react-router-dom'
 import type { OrderResponse } from '../types'
+import { useCurrency } from '../hooks/useCurrency'
 
 export default function OrderSuccessPage() {
   const location = useLocation()
   const order = (location.state as { order?: OrderResponse })?.order
+  const { format } = useCurrency()
 
   return (
     <div className="max-w-lg mx-auto mt-10 text-center">
@@ -31,15 +33,15 @@ export default function OrderSuccessPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Items total</span>
-              <span>${order.total_amount.toFixed(2)}</span>
+              <span>{format(order.total_amount)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Shipping</span>
-              <span>${order.shipping_cost.toFixed(2)}</span>
+              <span>{format(order.shipping_cost)}</span>
             </div>
             <div className="flex justify-between font-semibold text-gray-900 border-t pt-2">
               <span>Total paid</span>
-              <span>${order.total_paid.toFixed(2)}</span>
+              <span>{format(order.total_paid)}</span>
             </div>
             <div className="flex justify-between text-gray-500 text-xs pt-1">
               <span>Ship to</span>

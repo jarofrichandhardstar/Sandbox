@@ -4,10 +4,12 @@ import type { ShippingCoverageResponse } from '../../types'
 import { ApiError } from '../../api/client'
 import Spinner from '../../components/Spinner'
 import Alert from '../../components/Alert'
+import { useCurrency } from '../../hooks/useCurrency'
 
 const emptyForm = { region_name: '', city: '', postal_code: '', cost: '' }
 
 export default function ShippingPage() {
+  const { format } = useCurrency()
   const [zones, setZones] = useState<ShippingCoverageResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -122,7 +124,7 @@ export default function ShippingPage() {
                       <td className="px-4 py-3 text-gray-600">{zone.city}</td>
                       <td className="px-4 py-3 text-gray-600">{zone.postal_code}</td>
                       <td className="px-4 py-3 text-right font-medium text-gray-900">
-                        ${zone.cost.toFixed(2)}
+                        {format(zone.cost)}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">

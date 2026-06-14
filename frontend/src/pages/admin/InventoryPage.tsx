@@ -6,8 +6,10 @@ import { ApiError } from '../../api/client'
 import Spinner from '../../components/Spinner'
 import Alert from '../../components/Alert'
 import { resolveImageUrl } from '../../utils/image'
+import { useCurrency } from '../../hooks/useCurrency'
 
 export default function InventoryPage() {
+  const { format } = useCurrency()
   const [items, setItems] = useState<AdminInventoryResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -104,8 +106,8 @@ export default function InventoryPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{item.sku}</td>
-                  <td className="px-4 py-3 text-right text-gray-900">${item.price.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right text-gray-500 hidden lg:table-cell">${item.cost.toFixed(2)}</td>
+                  <td className="px-4 py-3 text-right text-gray-900">{format(item.price)}</td>
+                  <td className="px-4 py-3 text-right text-gray-500 hidden lg:table-cell">{format(item.cost)}</td>
                   <td className="px-4 py-3 text-right hidden lg:table-cell">
                     <span className={item.profit_margin > 0 ? 'text-green-600' : 'text-red-600'}>
                       {item.profit_margin.toFixed(0)}%

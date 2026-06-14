@@ -5,6 +5,7 @@ import { ordersApi } from '../api/orders'
 import { ApiError } from '../api/client'
 import type { ShippingCoverageResponse } from '../types'
 import Alert from '../components/Alert'
+import { useCurrency } from '../hooks/useCurrency'
 
 type Step = 'shipping' | 'confirm'
 
@@ -12,6 +13,7 @@ export default function CheckoutPage() {
   const { items, clear } = useCart()
   const navigate = useNavigate()
 
+  const { format } = useCurrency()
   const [step, setStep] = useState<Step>('shipping')
   const [form, setForm] = useState({
     shipping_address: '',
@@ -111,12 +113,12 @@ export default function CheckoutPage() {
             {items.map(item => (
               <div key={item.id} className="flex justify-between text-gray-600">
                 <span>{item.product_name} × {item.quantity}</span>
-                <span>${item.line_total.toFixed(2)}</span>
+                <span>{format(item.line_total)}</span>
               </div>
             ))}
             <div className="border-t border-gray-200 pt-1 flex justify-between font-medium text-gray-900">
               <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{format(subtotal)}</span>
             </div>
           </div>
 
@@ -174,7 +176,7 @@ export default function CheckoutPage() {
               {items.map(item => (
                 <div key={item.id} className="flex justify-between text-gray-600">
                   <span>{item.product_name} × {item.quantity}</span>
-                  <span>${item.line_total.toFixed(2)}</span>
+                  <span>{format(item.line_total)}</span>
                 </div>
               ))}
             </div>
@@ -183,15 +185,15 @@ export default function CheckoutPage() {
           <div className="border-t pt-4 space-y-1 text-sm">
             <div className="flex justify-between text-gray-600">
               <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{format(subtotal)}</span>
             </div>
             <div className="flex justify-between text-gray-600">
               <span>Shipping ({shippingInfo.region_name})</span>
-              <span>${shippingInfo.cost.toFixed(2)}</span>
+              <span>{format(shippingInfo.cost)}</span>
             </div>
             <div className="flex justify-between font-bold text-gray-900 text-base pt-1">
               <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+              <span>{format(total)}</span>
             </div>
           </div>
 

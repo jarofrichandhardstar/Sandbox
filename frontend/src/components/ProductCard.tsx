@@ -5,10 +5,12 @@ import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { ApiError } from '../api/client'
 import { resolveImageUrl } from '../utils/image'
+import { useCurrency } from '../hooks/useCurrency'
 
 export default function ProductCard({ product }: { product: PublishedProduct }) {
   const { token } = useAuth()
   const { addToCart } = useCart()
+  const { format } = useCurrency()
   const [adding, setAdding] = useState(false)
   const [added, setAdded] = useState(false)
   const [error, setError] = useState('')
@@ -59,7 +61,7 @@ export default function ProductCard({ product }: { product: PublishedProduct }) 
 
         <div className="flex items-center justify-between mt-2">
           <span className="text-lg font-bold text-gray-900">
-            ${product.price.toFixed(2)}
+            {format(product.price)}
           </span>
           <span
             className={`text-xs font-medium px-2 py-1 rounded-full ${

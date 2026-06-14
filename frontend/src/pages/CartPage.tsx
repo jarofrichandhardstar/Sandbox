@@ -3,9 +3,11 @@ import { useState } from 'react'
 import { useCart } from '../context/CartContext'
 import { ApiError } from '../api/client'
 import Spinner from '../components/Spinner'
+import { useCurrency } from '../hooks/useCurrency'
 
 export default function CartPage() {
   const { items, isLoading, updateItem, removeItem } = useCart()
+  const { format } = useCurrency()
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const subtotal = items.reduce((s, i) => s + i.line_total, 0)
@@ -80,8 +82,8 @@ export default function CartPage() {
                       )}
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="font-semibold text-gray-900">${item.line_total.toFixed(2)}</p>
-                      <p className="text-xs text-gray-500">${item.unit_price.toFixed(2)} each</p>
+                      <p className="font-semibold text-gray-900">{format(item.line_total)}</p>
+                      <p className="text-xs text-gray-500">{format(item.unit_price)} each</p>
                     </div>
                   </div>
 
@@ -123,7 +125,7 @@ export default function CartPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>{format(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
@@ -131,7 +133,7 @@ export default function CartPage() {
                 </div>
                 <div className="border-t border-gray-100 pt-2 flex justify-between font-semibold text-gray-900">
                   <span>Total</span>
-                  <span>${subtotal.toFixed(2)}+</span>
+                  <span>{format(subtotal)}+</span>
                 </div>
               </div>
               <Link

@@ -4,6 +4,7 @@ import { ApiError } from '../../api/client'
 import type { AdminOrderListItem, OrderResponse } from '../../types'
 import Spinner from '../../components/Spinner'
 import Alert from '../../components/Alert'
+import { useCurrency } from '../../hooks/useCurrency'
 
 const STATUS_OPTIONS = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']
 
@@ -23,7 +24,7 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
-function exportToCSV(orders: AdminOrderListItem[]) {
+function exportToCSV(orders: AdminOrderListItem[], fmt: (n: number) => string) {
   const headers = [
     'Order ID',
     'Date',
@@ -55,9 +56,9 @@ function exportToCSV(orders: AdminOrderListItem[]) {
     o.shipping_region,
     '',                                             // postal code not on list item
     o.item_count,
-    o.total_amount.toFixed(2),
-    o.shipping_cost.toFixed(2),
-    o.total_paid.toFixed(2),
+    fmt(o.total_amount),
+    fmt(o.shipping_cost),
+    fmt(o.total_paid),
     o.status,
   ].map(escape).join(','))
 
@@ -84,6 +85,7 @@ function OrderDetailModal({
   onClose: () => void
   onStatusChange: (id: string, status: string) => void
 }) {
+  const { format } = useCurrency()
   const [order, setOrder] = useState<OrderResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
@@ -177,9 +179,9 @@ function OrderDetailModal({
                     <div key={item.inventory_item_id} className="flex justify-between items-start text-sm">
                       <div>
                         <p className="text-gray-900 font-medium">{item.item_name}</p>
-                        <p className="text-gray-400 text-xs">SKU: {item.sku} · qty {item.quantity} × ${item.unit_price.toFixed(2)}</p>
+                        <p className="text-gray-400 text-xs">SKU: {item.sku} · qty {item.quantity} × {format(item.unit_price)}</p>
                       </div>
-                      <span className="text-gray-700 font-medium ml-4 shrink-0">${item.line_total.toFixed(2)}</span>
+                      <span className="text-gray-700 font-medium ml-4 shrink-0">{format(item.line_total)}</span>
                     </div>
                   ))}
                 </div>
@@ -189,15 +191,15 @@ function OrderDetailModal({
               <div className="border-t pt-4 space-y-1.5 text-sm">
                 <div className="flex justify-between text-gray-500">
                   <span>Subtotal</span>
-                  <span>${order.total_amount.toFixed(2)}</span>
+                  <span>{format(order.total_amount)}</span>
                 </div>
                 <div className="flex justify-between text-gray-500">
                   <span>Shipping ({order.shipping_region})</span>
-                  <span>${order.shipping_cost.toFixed(2)}</span>
+                  <span>{format(order.shipping_cost)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-gray-900 text-base pt-1">
                   <span>Total</span>
-                  <span>${order.total_paid.toFixed(2)}</span>
+                  <span>{format(order.total_paid)}</span>
                 </div>
               </div>
             </>
@@ -223,6 +225,7 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function OrdersPage() {
+  const { format } = useCurrency()
   const [orders, setOrders] = useState<AdminOrderListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -278,7 +281,7 @@ export default function OrdersPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
         <button
-          onClick={() => exportToCSV(filtered)}
+          onClick={() => exportToCSV(filtered, format)}
           disabled={filtered.length === 0}
           className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
@@ -294,7 +297,7 @@ export default function OrdersPage() {
       {/* Summary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Total orders" value={String(orders.length)} />
-        <StatCard label="Revenue" value={`$${stats.revenue.toFixed(2)}`} sub="excl. cancelled" />
+        <StatCard label="Revenue" value={format(stats.revenue)} sub="excl. cancelled" />
         <StatCard label="Pending" value={String(stats.byStatus.pending ?? 0)} />
         <StatCard label="Delivered" value={String(stats.byStatus.delivered ?? 0)} />
       </div>
@@ -366,8 +369,8 @@ export default function OrdersPage() {
                     <p className="text-gray-400 text-xs">{new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <p className="font-semibold text-gray-900">${order.total_paid.toFixed(2)}</p>
-                    <p className="text-gray-400 text-xs">+${order.shipping_cost.toFixed(2)} ship</p>
+                    <p className="font-semibold text-gray-900">{format(order.total_paid)}</p>
+                    <p className="text-gray-400 text-xs">+{format(order.shipping_cost)} ship</p>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <StatusBadge status={order.status} />
@@ -382,7 +385,7 @@ export default function OrdersPage() {
                   {filtered.length !== orders.length ? ` (filtered from ${orders.length})` : ''}
                 </td>
                 <td className="px-4 py-2 text-right text-xs font-semibold text-gray-700">
-                  ${filtered.reduce((s, o) => s + o.total_paid, 0).toFixed(2)}
+                  {format(filtered.reduce((s, o) => s + o.total_paid, 0))}
                 </td>
                 <td />
               </tr>

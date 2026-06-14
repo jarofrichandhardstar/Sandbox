@@ -8,12 +8,14 @@ import { ApiError } from '../api/client'
 import Spinner from '../components/Spinner'
 import Alert from '../components/Alert'
 import { resolveImageUrl } from '../utils/image'
+import { useCurrency } from '../hooks/useCurrency'
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { token } = useAuth()
   const { addToCart } = useCart()
 
+  const { format } = useCurrency()
   const [product, setProduct] = useState<PublishedProduct | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -83,7 +85,7 @@ export default function ProductDetailPage() {
             <p className="text-gray-600 leading-relaxed">{product.description}</p>
 
             <div className="flex items-center gap-3">
-              <span className="text-3xl font-bold text-gray-900">${product.price.toFixed(2)}</span>
+              <span className="text-3xl font-bold text-gray-900">{format(product.price)}</span>
               <span
                 className={`text-sm font-medium px-3 py-1 rounded-full ${
                   product.in_stock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
