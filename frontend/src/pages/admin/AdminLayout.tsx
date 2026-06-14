@@ -6,6 +6,7 @@ import Spinner from '../../components/Spinner'
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', end: true },
+  { to: '/admin/orders', label: 'Orders' },
   { to: '/admin/inventory', label: 'Inventory' },
   { to: '/admin/shipping', label: 'Shipping' },
   { to: '/admin/content', label: 'Content' },

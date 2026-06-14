@@ -6,7 +6,7 @@ import { ApiError } from '../api/client'
 import type { ShippingCoverageResponse } from '../types'
 import Alert from '../components/Alert'
 
-type Step = 'shipping' | 'payment' | 'confirm'
+type Step = 'shipping' | 'confirm'
 
 export default function CheckoutPage() {
   const { items, clear } = useCart()
@@ -17,7 +17,6 @@ export default function CheckoutPage() {
     shipping_address: '',
     shipping_city: '',
     shipping_postal_code: '',
-    payment_method: 'cash',
   })
   const [shippingInfo, setShippingInfo] = useState<ShippingCoverageResponse | null>(null)
   const [estimating, setEstimating] = useState(false)
@@ -27,17 +26,17 @@ export default function CheckoutPage() {
   const subtotal = items.reduce((s, i) => s + i.line_total, 0)
   const total = subtotal + (shippingInfo?.cost ?? 0)
 
-  const handleEstimate = async (e: React.FormEvent) => {
+  const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setEstimating(true)
     try {
       const res = await ordersApi.estimateShipping(form.shipping_city, form.shipping_postal_code)
-      if (!res.data) throw new Error('No shipping coverage found')
+      if (!res.data) throw new Error('No shipping coverage found for this location')
       setShippingInfo(res.data)
-      setStep('payment')
+      setStep('confirm')
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Shipping estimate failed')
+      setError(err instanceof ApiError ? err.message : 'Could not find shipping coverage for this location')
     } finally {
       setEstimating(false)
     }
@@ -47,10 +46,7 @@ export default function CheckoutPage() {
     setError('')
     setPlacing(true)
     try {
-      const res = await ordersApi.checkout({
-        ...form,
-        payment_amount: total,
-      })
+      const res = await ordersApi.checkout(form)
       if (!res.data) throw new Error('Checkout failed')
       clear()
       navigate('/orders/success', { state: { order: res.data } })
@@ -74,37 +70,59 @@ export default function CheckoutPage() {
     <div className="max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-8">Checkout</h1>
 
-      <div className="flex items-center gap-4 mb-8">
-        {(['shipping', 'payment', 'confirm'] as Step[]).map((s, i) => (
-          <div key={s} className="flex items-center gap-2">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                step === s
-                  ? 'bg-indigo-600 text-white'
-                  : i < (['shipping', 'payment', 'confirm'] as Step[]).indexOf(step)
-                  ? 'bg-green-500 text-white'
+      {/* Step indicator */}
+      <div className="flex items-center gap-3 mb-8">
+        {(['shipping', 'confirm'] as Step[]).map((s, i) => {
+          const stepIndex = ['shipping', 'confirm'].indexOf(step)
+          const isActive = s === step
+          const isDone = i < stepIndex
+          return (
+            <div key={s} className="flex items-center gap-2">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  isActive ? 'bg-indigo-600 text-white'
+                  : isDone  ? 'bg-green-500 text-white'
                   : 'bg-gray-200 text-gray-500'
-              }`}
-            >
-              {i + 1}
+                }`}
+              >
+                {i + 1}
+              </div>
+              <span className="text-sm text-gray-600 hidden sm:block">
+                {s === 'shipping' ? 'Shipping' : 'Confirm order'}
+              </span>
+              {i < 1 && <div className="w-8 h-px bg-gray-200" />}
             </div>
-            <span className="text-sm capitalize text-gray-600 hidden sm:block">{s}</span>
-            {i < 2 && <div className="w-8 h-px bg-gray-200" />}
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {error && <Alert message={error} className="mb-4" />}
 
+      {/* Step 1: Shipping address */}
       {step === 'shipping' && (
-        <form onSubmit={handleEstimate} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
+        <form onSubmit={handleContinue} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
           <h2 className="font-semibold text-gray-900">Shipping address</h2>
+
+          <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-1">
+            {items.map(item => (
+              <div key={item.id} className="flex justify-between text-gray-600">
+                <span>{item.product_name} × {item.quantity}</span>
+                <span>${item.line_total.toFixed(2)}</span>
+              </div>
+            ))}
+            <div className="border-t border-gray-200 pt-1 flex justify-between font-medium text-gray-900">
+              <span>Subtotal</span>
+              <span>${subtotal.toFixed(2)}</span>
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Street address</label>
             <input
               required
               value={form.shipping_address}
               onChange={e => setForm(f => ({ ...f, shipping_address: e.target.value }))}
+              placeholder="123 Main Street"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
@@ -115,6 +133,7 @@ export default function CheckoutPage() {
                 required
                 value={form.shipping_city}
                 onChange={e => setForm(f => ({ ...f, shipping_city: e.target.value }))}
+                placeholder="City name"
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
@@ -124,24 +143,29 @@ export default function CheckoutPage() {
                 required
                 value={form.shipping_postal_code}
                 onChange={e => setForm(f => ({ ...f, shipping_postal_code: e.target.value }))}
+                placeholder="12345"
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
           </div>
+
           <button
             type="submit"
             disabled={estimating}
             className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
           >
-            {estimating ? 'Checking shipping…' : 'Continue to payment'}
+            {estimating ? 'Checking shipping…' : 'Continue to review'}
           </button>
         </form>
       )}
 
-      {step === 'payment' && shippingInfo && (
+      {/* Step 2: Confirm order */}
+      {step === 'confirm' && shippingInfo && (
         <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-6">
+          <h2 className="font-semibold text-gray-900">Review your order</h2>
+
           <div>
-            <h2 className="font-semibold text-gray-900 mb-3">Order summary</h2>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Items</p>
             <div className="space-y-2 text-sm">
               {items.map(item => (
                 <div key={item.id} className="flex justify-between text-gray-600">
@@ -149,81 +173,38 @@ export default function CheckoutPage() {
                   <span>${item.line_total.toFixed(2)}</span>
                 </div>
               ))}
-              <div className="border-t pt-2 flex justify-between text-gray-600">
-                <span>Shipping ({shippingInfo.region_name})</span>
-                <span>${shippingInfo.cost.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between font-semibold text-gray-900 text-base">
-                <span>Total</span>
-                <span>${total.toFixed(2)}</span>
-              </div>
             </div>
           </div>
 
-          <div>
-            <h2 className="font-semibold text-gray-900 mb-3">Payment method</h2>
-            <select
-              value={form.payment_method}
-              onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
-            >
-              <option value="cash">Cash on delivery</option>
-              <option value="bank_transfer">Bank transfer</option>
-            </select>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => setStep('shipping')}
-              className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Back
-            </button>
-            <button
-              onClick={() => setStep('confirm')}
-              className="flex-1 rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
-            >
-              Review order
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === 'confirm' && shippingInfo && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-6">
-          <h2 className="font-semibold text-gray-900">Confirm your order</h2>
-
-          <div className="text-sm space-y-1 text-gray-600">
-            <p className="font-medium text-gray-900">Shipping to:</p>
-            <p>{form.shipping_address}</p>
-            <p>{form.shipping_city}, {form.shipping_postal_code}</p>
-            <p className="text-gray-500">{shippingInfo.region_name}</p>
-          </div>
-
-          <div className="text-sm space-y-2">
-            {items.map(item => (
-              <div key={item.id} className="flex justify-between text-gray-600">
-                <span>{item.product_name} × {item.quantity}</span>
-                <span>${item.line_total.toFixed(2)}</span>
-              </div>
-            ))}
-            <div className="border-t pt-2 flex justify-between text-gray-600">
-              <span>Shipping</span>
+          <div className="border-t pt-4 space-y-1 text-sm">
+            <div className="flex justify-between text-gray-600">
+              <span>Subtotal</span>
+              <span>${subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>Shipping ({shippingInfo.region_name})</span>
               <span>${shippingInfo.cost.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between font-bold text-gray-900 text-base">
-              <span>Total due</span>
+            <div className="flex justify-between font-bold text-gray-900 text-base pt-1">
+              <span>Total</span>
               <span>${total.toFixed(2)}</span>
             </div>
           </div>
 
-          <div className="text-sm text-gray-600">
-            <span className="font-medium">Payment:</span> {form.payment_method.replace('_', ' ')}
+          <div className="bg-gray-50 rounded-xl p-4 text-sm">
+            <p className="font-medium text-gray-700 mb-1">Ship to</p>
+            <p className="text-gray-600">{form.shipping_address}</p>
+            <p className="text-gray-600">{form.shipping_city}, {form.shipping_postal_code}</p>
+            <p className="text-gray-400 text-xs mt-0.5">{shippingInfo.region_name}</p>
           </div>
+
+          <p className="text-xs text-gray-400 text-center">
+            Payment will be arranged upon delivery or as agreed with the seller.
+          </p>
 
           <div className="flex gap-3">
             <button
-              onClick={() => setStep('payment')}
+              onClick={() => setStep('shipping')}
               className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Back

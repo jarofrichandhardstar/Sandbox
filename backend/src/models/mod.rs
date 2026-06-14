@@ -357,8 +357,59 @@ pub struct CheckoutRequest {
     pub shipping_address: String,
     pub shipping_city: String,
     pub shipping_postal_code: String,
-    pub payment_method: String,
-    pub payment_amount: f64,
+}
+
+#[derive(Debug, sqlx::FromRow)]
+pub struct AdminOrderRow {
+    pub id: Uuid,
+    pub user_email: String,
+    pub username: String,
+    pub total_amount: f64,
+    pub shipping_cost: f64,
+    pub total_paid: f64,
+    pub status: String,
+    pub shipping_city: String,
+    pub shipping_region: String,
+    pub item_count: i64,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AdminOrderListItem {
+    pub id: String,
+    pub user_email: String,
+    pub username: String,
+    pub total_amount: f64,
+    pub shipping_cost: f64,
+    pub total_paid: f64,
+    pub status: String,
+    pub shipping_city: String,
+    pub shipping_region: String,
+    pub item_count: i64,
+    pub created_at: String,
+}
+
+impl From<AdminOrderRow> for AdminOrderListItem {
+    fn from(r: AdminOrderRow) -> Self {
+        AdminOrderListItem {
+            id: r.id.to_string(),
+            user_email: r.user_email,
+            username: r.username,
+            total_amount: r.total_amount,
+            shipping_cost: r.shipping_cost,
+            total_paid: r.total_paid,
+            status: r.status,
+            shipping_city: r.shipping_city,
+            shipping_region: r.shipping_region,
+            item_count: r.item_count,
+            created_at: r.created_at.to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateOrderStatusRequest {
+    pub status: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]

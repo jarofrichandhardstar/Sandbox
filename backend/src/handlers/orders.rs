@@ -316,10 +316,8 @@ pub async fn checkout(
 
     if req.shipping_address.trim().is_empty()
         || req.shipping_city.trim().is_empty()
-        || req.shipping_postal_code.trim().is_empty()
-        || req.payment_method.trim().is_empty()
-        || req.payment_amount < 0.0 {
-        return Err(ApiError::ValidationError("Shipping address, city, postal code, payment method, and a valid payment amount are required".to_string()));
+        || req.shipping_postal_code.trim().is_empty() {
+        return Err(ApiError::ValidationError("Shipping address, city, and postal code are required".to_string()));
     }
 
     let cart_items: Vec<CartItemRow> = sqlx::query_as(
@@ -361,13 +359,6 @@ pub async fn checkout(
     let subtotal = cart_items.iter().map(|item| item.price * item.quantity as f64).sum::<f64>();
     let total = subtotal + shipping_coverage.cost;
 
-    if req.payment_amount < total {
-        return Err(ApiError::BadRequest(format!(
-            "Payment amount is insufficient. Total due is {}.",
-            total
-        )));
-    }
-
     let mut tx = pool.inner().begin().await.map_err(|e| {
         tracing::error!("Failed to begin transaction: {}", e);
         ApiError::Database(e.to_string())
@@ -386,7 +377,7 @@ pub async fn checkout(
     .bind(subtotal)
     .bind(shipping_coverage.cost)
     .bind(total)
-    .bind("paid")
+    .bind("pending")
     .bind(&req.shipping_address)
     .bind(&req.shipping_city)
     .bind(&req.shipping_postal_code)

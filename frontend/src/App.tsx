@@ -26,6 +26,7 @@ import InventoryPage from './pages/admin/InventoryPage'
 import InventoryEditPage from './pages/admin/InventoryEditPage'
 import ShippingPage from './pages/admin/ShippingPage'
 import ContentPage from './pages/admin/ContentPage'
+import OrdersPage from './pages/admin/OrdersPage'
 
 export default function App() {
   return (
@@ -61,6 +62,7 @@ export default function App() {
                 <Route path="/admin/inventory/:id" element={<InventoryEditPage />} />
                 <Route path="/admin/shipping" element={<ShippingPage />} />
                 <Route path="/admin/content" element={<ContentPage />} />
+                <Route path="/admin/orders" element={<OrdersPage />} />
               </Route>
             </Route>
           </Routes>

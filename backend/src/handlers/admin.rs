@@ -738,3 +738,114 @@ pub async fn delete_shipping_coverage(
     )))
 }
 
+// ── Admin Order Endpoints ─────────────────────────────────────────────────────
+
+#[rocket::get("/orders")]
+pub async fn list_orders(
+    _guard: AdminGuard,
+    pool: &State<DbPool>,
+) -> Result<Json<ApiResponse<Vec<AdminOrderListItem>>>> {
+    let rows: Vec<AdminOrderRow> = sqlx::query_as(
+        "SELECT o.id, u.email AS user_email, u.username,
+                o.total_amount, o.shipping_cost, o.total_paid, o.status,
+                o.shipping_city, o.shipping_region, o.created_at,
+                COUNT(oi.id)::BIGINT AS item_count
+         FROM orders o
+         JOIN users u ON o.user_id = u.id
+         LEFT JOIN order_items oi ON oi.order_id = o.id
+         GROUP BY o.id, u.email, u.username
+         ORDER BY o.created_at DESC"
+    )
+    .fetch_all(pool.inner())
+    .await
+    .map_err(|e| {
+        tracing::error!("Database error listing orders: {}", e);
+        ApiError::Database(e.to_string())
+    })?;
+
+    let items: Vec<AdminOrderListItem> = rows.into_iter().map(Into::into).collect();
+    Ok(Json(ApiResponse::ok(items)))
+}
+
+#[rocket::get("/orders/<id>")]
+pub async fn get_order(
+    _guard: AdminGuard,
+    id: String,
+    pool: &State<DbPool>,
+) -> Result<Json<ApiResponse<OrderResponse>>> {
+    let order_id = Uuid::parse_str(&id)
+        .map_err(|_| ApiError::BadRequest("Invalid order ID".to_string()))?;
+
+    let order: Order = sqlx::query_as(
+        "SELECT id, user_id, total_amount, shipping_cost, total_paid, status,
+                shipping_address, shipping_city, shipping_postal_code, shipping_region,
+                created_at, updated_at
+         FROM orders WHERE id = $1"
+    )
+    .bind(order_id)
+    .fetch_optional(pool.inner())
+    .await
+    .map_err(|e| {
+        tracing::error!("Database error: {}", e);
+        ApiError::Database(e.to_string())
+    })?
+    .ok_or(ApiError::NotFound)?;
+
+    let order_items: Vec<OrderItem> = sqlx::query_as(
+        "SELECT id, order_id, inventory_item_id, item_name, sku, quantity, unit_price, line_total
+         FROM order_items WHERE order_id = $1 ORDER BY item_name"
+    )
+    .bind(order_id)
+    .fetch_all(pool.inner())
+    .await
+    .map_err(|e| {
+        tracing::error!("Database error: {}", e);
+        ApiError::Database(e.to_string())
+    })?;
+
+    let mut response: OrderResponse = order.into();
+    response.items = order_items.into_iter().map(Into::into).collect();
+
+    Ok(Json(ApiResponse::ok(response)))
+}
+
+#[rocket::put("/orders/<id>/status", format = "json", data = "<req>")]
+pub async fn update_order_status(
+    _guard: AdminGuard,
+    id: String,
+    req: Json<UpdateOrderStatusRequest>,
+    pool: &State<DbPool>,
+) -> Result<Json<ApiResponse<serde_json::Value>>> {
+    let order_id = Uuid::parse_str(&id)
+        .map_err(|_| ApiError::BadRequest("Invalid order ID".to_string()))?;
+
+    let valid_statuses = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+    if !valid_statuses.contains(&req.status.as_str()) {
+        return Err(ApiError::ValidationError(format!(
+            "Invalid status. Must be one of: {}",
+            valid_statuses.join(", ")
+        )));
+    }
+
+    let updated = sqlx::query(
+        "UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2"
+    )
+    .bind(&req.status)
+    .bind(order_id)
+    .execute(pool.inner())
+    .await
+    .map_err(|e| {
+        tracing::error!("Database error: {}", e);
+        ApiError::Database(e.to_string())
+    })?;
+
+    if updated.rows_affected() == 0 {
+        return Err(ApiError::NotFound);
+    }
+
+    Ok(Json(ApiResponse::ok_with_message(
+        serde_json::json!({"status": req.status}),
+        "Order status updated",
+    )))
+}
+

@@ -71,8 +71,24 @@ export interface CheckoutRequest {
   shipping_address: string
   shipping_city: string
   shipping_postal_code: string
-  payment_method: string
-  payment_amount: number
+}
+
+export interface AdminOrderListItem {
+  id: string
+  user_email: string
+  username: string
+  total_amount: number
+  shipping_cost: number
+  total_paid: number
+  status: string
+  shipping_city: string
+  shipping_region: string
+  item_count: number
+  created_at: string
+}
+
+export interface UpdateOrderStatusRequest {
+  status: string
 }
 
 export interface OrderItemResponse {
