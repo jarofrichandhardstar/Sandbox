@@ -87,12 +87,10 @@ async fn main() -> Result<(), rocket::Error> {
             handlers::content::delete_content,
             handlers::content::upload_content_image,
         ])
-        .mount("/api/products", routes![
+        .mount("/api", routes![
             handlers::products::list_published_products,
             handlers::products::get_published_product,
             handlers::products::search_products,
-        ])
-        .mount("/api", routes![
             handlers::products::serve_product_image,
         ])
         .launch()
