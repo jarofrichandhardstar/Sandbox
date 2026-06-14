@@ -18,7 +18,7 @@ export default function ProductDetailPage() {
 
   const { format } = useCurrency()
   const { get } = useContent()
-  const cartBtnColor = get('cart_button_color', '#4f46e5')
+  const cartBtnColor = get('primary_button_color', '#4f46e5')
   const [product, setProduct] = useState<PublishedProduct | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -130,7 +130,8 @@ export default function ProductDetailPage() {
             ) : (
               <Link
                 to="/login"
-                className="mt-2 block text-center rounded-lg bg-indigo-600 py-3 text-sm font-medium text-white hover:bg-indigo-700"
+                className="mt-2 block text-center rounded-lg py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: cartBtnColor }}
               >
                 Login to purchase
               </Link>

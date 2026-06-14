@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { authApi } from '../api/auth'
 import { ApiError } from '../api/client'
 import Alert from '../components/Alert'
+import { useContent } from '../context/ContentContext'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -10,6 +11,8 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ email: '', username: '', password: '', confirm: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const { get } = useContent()
+  const primaryColor = get('primary_button_color', '#4f46e5')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -89,7 +92,8 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading || (!!form.confirm && form.password !== form.confirm)}
-            className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            style={{ backgroundColor: primaryColor }}
+            className="w-full rounded-lg py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? 'Creating account…' : 'Create account'}
           </button>

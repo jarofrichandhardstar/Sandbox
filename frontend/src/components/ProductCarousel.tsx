@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { PublishedProduct } from '../types'
 import ProductCard from './ProductCard'
+import { useContent } from '../context/ContentContext'
 
 interface Props {
   products: PublishedProduct[]
@@ -27,6 +28,8 @@ export default function ProductCarousel({
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const [visible, setVisible] = useState(getVisibleCount)
+  const { get } = useContent()
+  const primaryColor = get('primary_button_color', '#4f46e5')
 
   // Keep visible count in sync with window width
   useEffect(() => {
@@ -150,8 +153,9 @@ export default function ProductCarousel({
               onClick={() => setIndex(i)}
               aria-label={`Go to slide ${i + 1}`}
               className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === index ? 'w-5 bg-indigo-600' : 'w-1.5 bg-gray-300 hover:bg-gray-400'
+                i === index ? 'w-5' : 'w-1.5 bg-gray-300 hover:bg-gray-400'
               }`}
+              style={i === index ? { backgroundColor: primaryColor } : undefined}
             />
           ))}
         </div>

@@ -4,6 +4,7 @@ import { authApi } from '../api/auth'
 import { useAuth } from '../context/AuthContext'
 import { ApiError } from '../api/client'
 import Alert from '../components/Alert'
+import { useContent } from '../context/ContentContext'
 
 export default function VerifyEmailPage() {
   const [params] = useSearchParams()
@@ -17,6 +18,8 @@ export default function VerifyEmailPage() {
   const [resending, setResending] = useState(false)
   const [resent, setResent] = useState(false)
   const inputs = useRef<(HTMLInputElement | null)[]>([])
+  const { get } = useContent()
+  const primaryColor = get('primary_button_color', '#4f46e5')
 
   const code = otp.join('')
 
@@ -117,7 +120,8 @@ export default function VerifyEmailPage() {
           <button
             type="submit"
             disabled={loading || code.length < 6}
-            className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            style={{ backgroundColor: primaryColor }}
+            className="w-full rounded-lg py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? 'Verifying…' : 'Verify email'}
           </button>

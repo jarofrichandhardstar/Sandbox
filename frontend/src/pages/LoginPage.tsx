@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ApiError } from '../api/client'
 import Alert from '../components/Alert'
+import { useContent } from '../context/ContentContext'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -14,6 +15,8 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const { get } = useContent()
+  const primaryColor = get('primary_button_color', '#4f46e5')
 
   useEffect(() => {
     if (successMsg) setError('')
@@ -76,7 +79,8 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            style={{ backgroundColor: primaryColor }}
+            className="w-full rounded-lg py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>

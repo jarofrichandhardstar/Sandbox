@@ -6,6 +6,7 @@ import { ApiError } from '../api/client'
 import type { ShippingCoverageResponse } from '../types'
 import Alert from '../components/Alert'
 import { useCurrency } from '../hooks/useCurrency'
+import { useContent } from '../context/ContentContext'
 
 type Step = 'shipping' | 'confirm'
 
@@ -14,6 +15,8 @@ export default function CheckoutPage() {
   const navigate = useNavigate()
 
   const { format } = useCurrency()
+  const { get } = useContent()
+  const primaryColor = get('primary_button_color', '#4f46e5')
   const [step, setStep] = useState<Step>('shipping')
   const [form, setForm] = useState({
     shipping_address: '',
@@ -86,10 +89,9 @@ export default function CheckoutPage() {
             <div key={s} className="flex items-center gap-2">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  isActive ? 'bg-indigo-600 text-white'
-                  : isDone  ? 'bg-green-500 text-white'
-                  : 'bg-gray-200 text-gray-500'
+                  isDone ? 'bg-green-500 text-white' : isActive ? 'text-white' : 'bg-gray-200 text-gray-500'
                 }`}
+                style={isActive ? { backgroundColor: primaryColor } : undefined}
               >
                 {i + 1}
               </div>
@@ -158,7 +160,8 @@ export default function CheckoutPage() {
           <button
             type="submit"
             disabled={estimating}
-            className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            style={{ backgroundColor: primaryColor }}
+            className="w-full rounded-lg py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {estimating ? 'Checking shipping…' : 'Continue to review'}
           </button>
@@ -218,7 +221,8 @@ export default function CheckoutPage() {
             <button
               onClick={handlePlaceOrder}
               disabled={placing}
-              className="flex-1 rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              style={{ backgroundColor: primaryColor }}
+              className="flex-1 rounded-lg py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {placing ? 'Placing order…' : 'Place order'}
             </button>

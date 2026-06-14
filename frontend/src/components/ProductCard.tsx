@@ -13,7 +13,7 @@ export default function ProductCard({ product }: { product: PublishedProduct }) 
   const { addToCart } = useCart()
   const { format } = useCurrency()
   const { get } = useContent()
-  const cartBtnColor = get('cart_button_color', '#4f46e5')
+  const cartBtnColor = get('primary_button_color', '#4f46e5')
   const [adding, setAdding] = useState(false)
   const [added, setAdded] = useState(false)
   const [error, setError] = useState('')
@@ -91,7 +91,8 @@ export default function ProductCard({ product }: { product: PublishedProduct }) 
         ) : (
           <Link
             to="/login"
-            className="mt-1 block text-center w-full rounded-lg border border-indigo-600 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
+            className="mt-1 block text-center w-full rounded-lg py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: cartBtnColor }}
           >
             Login to buy
           </Link>

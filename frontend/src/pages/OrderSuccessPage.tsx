@@ -1,11 +1,14 @@
 import { useLocation, Link } from 'react-router-dom'
 import type { OrderResponse } from '../types'
 import { useCurrency } from '../hooks/useCurrency'
+import { useContent } from '../context/ContentContext'
 
 export default function OrderSuccessPage() {
   const location = useLocation()
   const order = (location.state as { order?: OrderResponse })?.order
   const { format } = useCurrency()
+  const { get } = useContent()
+  const primaryColor = get('primary_button_color', '#4f46e5')
 
   return (
     <div className="max-w-lg mx-auto mt-10 text-center">
@@ -52,7 +55,8 @@ export default function OrderSuccessPage() {
 
         <Link
           to="/"
-          className="inline-block rounded-lg bg-indigo-600 px-8 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+          className="inline-block rounded-lg px-8 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+          style={{ backgroundColor: primaryColor }}
         >
           Continue shopping
         </Link>

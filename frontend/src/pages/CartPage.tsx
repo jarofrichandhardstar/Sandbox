@@ -4,10 +4,13 @@ import { useCart } from '../context/CartContext'
 import { ApiError } from '../api/client'
 import Spinner from '../components/Spinner'
 import { useCurrency } from '../hooks/useCurrency'
+import { useContent } from '../context/ContentContext'
 
 export default function CartPage() {
   const { items, isLoading, updateItem, removeItem } = useCart()
   const { format } = useCurrency()
+  const { get } = useContent()
+  const primaryColor = get('primary_button_color', '#4f46e5')
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const subtotal = items.reduce((s, i) => s + i.line_total, 0)
@@ -47,7 +50,8 @@ export default function CartPage() {
           <p className="text-gray-400 mb-4">Your cart is empty.</p>
           <Link
             to="/"
-            className="inline-block rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+            className="inline-block rounded-lg px-6 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: primaryColor }}
           >
             Browse products
           </Link>
@@ -138,7 +142,8 @@ export default function CartPage() {
               </div>
               <Link
                 to="/checkout"
-                className="mt-4 block text-center w-full rounded-lg bg-indigo-600 py-3 text-sm font-medium text-white hover:bg-indigo-700"
+                className="mt-4 block text-center w-full rounded-lg py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: primaryColor }}
               >
                 Proceed to checkout
               </Link>
