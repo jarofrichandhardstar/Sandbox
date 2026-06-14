@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
+use aws_sdk_s3::primitives::ByteStream;
 
 pub const UPLOAD_DIR: &str = "uploads/products";
 pub const MAX_FILE_SIZE: usize = 5 * 1024 * 1024; // 5MB
@@ -85,6 +86,96 @@ pub fn delete_upload(filename: &str) -> crate::errors::Result<()> {
 /// Extract filename from URL path
 pub fn extract_filename_from_url(url: &str) -> Option<String> {
     url.split('/').last().map(|s| s.to_string())
+}
+
+// ---------------------------------------------------------------------------
+// StorageService — abstracts local disk vs. S3-compatible storage
+// ---------------------------------------------------------------------------
+
+/// Managed Rocket state that handles both local and S3 storage.
+/// Constructed once at startup; cloned cheaply (S3 client is Arc-backed).
+pub struct StorageService {
+    s3_client:  Option<aws_sdk_s3::Client>,
+    bucket:     Option<String>,
+    public_url: Option<String>,
+}
+
+impl StorageService {
+    pub fn local() -> Self {
+        Self { s3_client: None, bucket: None, public_url: None }
+    }
+
+    pub fn s3(client: aws_sdk_s3::Client, bucket: String, public_url: String) -> Self {
+        Self {
+            s3_client:  Some(client),
+            bucket:     Some(bucket),
+            public_url: Some(public_url),
+        }
+    }
+
+    pub fn is_s3(&self) -> bool {
+        self.s3_client.is_some()
+    }
+
+    /// Upload bytes and return the publicly accessible URL for the object.
+    pub async fn upload(
+        &self,
+        filename: &str,
+        data: Vec<u8>,
+        content_type: &str,
+    ) -> crate::errors::Result<String> {
+        if let (Some(client), Some(bucket), Some(public_url)) =
+            (&self.s3_client, &self.bucket, &self.public_url)
+        {
+            client
+                .put_object()
+                .bucket(bucket)
+                .key(filename)
+                .body(ByteStream::from(data))
+                .content_type(content_type)
+                .send()
+                .await
+                .map_err(|e| {
+                    tracing::error!("S3 upload failed ({}): {}", filename, e);
+                    crate::errors::ApiError::InternalError
+                })?;
+
+            tracing::info!("S3 upload ok: {}", filename);
+            Ok(format!("{}/{}", public_url.trim_end_matches('/'), filename))
+        } else {
+            save_upload(filename, &data)
+        }
+    }
+
+    /// Delete an object identified by its stored URL.
+    /// Handles both local `/api/images/<name>` paths and S3/HTTPS URLs gracefully.
+    pub async fn delete(&self, url: &str) -> crate::errors::Result<()> {
+        let filename = match extract_filename_from_url(url) {
+            Some(f) => f,
+            None    => return Ok(()),
+        };
+
+        if let (Some(client), Some(bucket)) = (&self.s3_client, &self.bucket) {
+            // Local URLs kept from before S3 migration — fall through to disk delete
+            if !url.starts_with("/api/images/") {
+                client
+                    .delete_object()
+                    .bucket(bucket)
+                    .key(&filename)
+                    .send()
+                    .await
+                    .map_err(|e| {
+                        tracing::error!("S3 delete failed ({}): {}", filename, e);
+                        crate::errors::ApiError::InternalError
+                    })?;
+
+                tracing::info!("S3 delete ok: {}", filename);
+                return Ok(());
+            }
+        }
+
+        delete_upload(&filename)
+    }
 }
 
 #[cfg(test)]

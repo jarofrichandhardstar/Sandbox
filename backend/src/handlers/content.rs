@@ -7,6 +7,7 @@ use crate::{
     models::*,
     middleware::AdminGuard,
     utils::images,
+    utils::images::StorageService,
 };
 
 /// GET /api/content — public endpoint, returns only is_public=true entries
@@ -143,8 +144,8 @@ pub async fn upload_content_image(
     key: String,
     data: Vec<u8>,
     pool: &State<DbPool>,
+    storage: &State<StorageService>,
 ) -> Result<Json<ApiResponse<SiteContentResponse>>> {
-    // Verify key exists and is an image type
     let row: SiteContent = sqlx::query_as(
         "SELECT key, value, label, description, content_type, section, is_public, updated_at
          FROM site_content WHERE key = $1"
@@ -164,7 +165,7 @@ pub async fn upload_content_image(
     images::validate_file_size(data.len())?;
 
     let filename = images::generate_filename("content.jpg");
-    let image_url = images::save_upload(&filename, &data)?;
+    let image_url = storage.upload(&filename, data, "image/jpeg").await?;
 
     let now = Utc::now();
     let updated: SiteContent = sqlx::query_as(

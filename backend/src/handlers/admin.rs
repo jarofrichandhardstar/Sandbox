@@ -8,6 +8,7 @@ use crate::{
     models::*,
     middleware::AdminGuard,
     utils::images,
+    utils::images::StorageService,
 };
 
 // Create inventory item
@@ -493,6 +494,7 @@ pub async fn upload_product_image(
     id: String,
     data: Vec<u8>,
     pool: &State<DbPool>,
+    storage: &State<StorageService>,
 ) -> Result<Json<ApiResponse<ImageUploadResponse>>> {
     let item_id = Uuid::parse_str(&id).map_err(|_| ApiError::BadRequest("Invalid ID format".to_string()))?;
 
@@ -507,16 +509,11 @@ pub async fn upload_product_image(
         })?
         .ok_or(ApiError::NotFound)?;
 
-    // Validate file size
     images::validate_file_size(data.len())?;
 
-    // Generate filename
     let filename = images::generate_filename("product.jpg");
+    let image_url = storage.upload(&filename, data, "image/jpeg").await?;
 
-    // Save image
-    let image_url = images::save_upload(&filename, &data)?;
-
-    // Update inventory item with image URL
     let now = Utc::now();
     sqlx::query(
         "UPDATE inventory_items SET image_url = $1, updated_at = $2 WHERE id = $3"
@@ -531,7 +528,7 @@ pub async fn upload_product_image(
         ApiError::Database(e.to_string())
     })?;
 
-    tracing::info!("Product image uploaded: {} ({})", item_id, filename);
+    tracing::info!("Product image uploaded: {} -> {}", item_id, image_url);
 
     Ok(Json(ApiResponse::ok_with_message(
         ImageUploadResponse {
@@ -549,12 +546,12 @@ pub async fn delete_product_image(
     _guard: AdminGuard,
     id: String,
     pool: &State<DbPool>,
+    storage: &State<StorageService>,
 ) -> Result<Json<ApiResponse<serde_json::Value>>> {
     let item_id = Uuid::parse_str(&id).map_err(|_| ApiError::BadRequest("Invalid ID format".to_string()))?;
 
-    // Fetch inventory item
     let item: InventoryItem = sqlx::query_as(
-        "SELECT id, name, sku, description, price, cost, is_published, image_url, created_at, updated_at 
+        "SELECT id, name, sku, description, price, cost, is_published, image_url, created_at, updated_at
          FROM inventory_items WHERE id = $1"
     )
     .bind(item_id)
@@ -566,14 +563,10 @@ pub async fn delete_product_image(
     })?
     .ok_or(ApiError::NotFound)?;
 
-    // Delete image file if exists
     if let Some(image_url) = &item.image_url {
-        if let Some(filename) = images::extract_filename_from_url(image_url) {
-            images::delete_upload(&filename)?;
-        }
+        storage.delete(image_url).await?;
     }
 
-    // Update inventory item to remove image URL
     let now = Utc::now();
     sqlx::query(
         "UPDATE inventory_items SET image_url = NULL, updated_at = $1 WHERE id = $2"

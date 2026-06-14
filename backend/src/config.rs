@@ -19,6 +19,11 @@ pub struct Config {
     pub smtp_from: String,
     // Frontend URL (used in password-reset links)
     pub app_url: String,
+    // S3-compatible object storage
+    pub s3_bucket:     Option<String>,
+    pub s3_region:     Option<String>,
+    pub s3_endpoint:   Option<String>, // custom endpoint for R2/MinIO; None = real AWS
+    pub s3_public_url: Option<String>, // base URL for serving objects publicly
 }
 
 impl Config {
@@ -42,6 +47,10 @@ impl Config {
             smtp_password:    env::var("SMTP_PASSWORD").ok(),
             smtp_from:        env::var("SMTP_FROM").unwrap_or_else(|_| "noreply@shop.com".to_string()),
             app_url:          env::var("APP_URL").unwrap_or_default(),
+            s3_bucket:        env::var("S3_BUCKET").ok(),
+            s3_region:        env::var("AWS_REGION").ok(),
+            s3_endpoint:      env::var("S3_ENDPOINT_URL").ok(),
+            s3_public_url:    env::var("S3_PUBLIC_URL").ok(),
         }
     }
 }

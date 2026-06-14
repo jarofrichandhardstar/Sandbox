@@ -9,6 +9,8 @@ mod models;
 mod utils;
 
 use rocket::routes;
+use aws_config;
+use aws_sdk_s3;
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
@@ -19,12 +21,33 @@ async fn main() -> Result<(), rocket::Error> {
         )
         .init();
 
-    if let Err(e) = crate::utils::images::ensure_upload_dir() {
-        tracing::error!("Failed to initialize upload directory: {:?}", e);
-    }
-
     let config = config::Config::from_env();
     tracing::info!("Starting server on port {}", config.port);
+
+    // Initialise storage backend: S3 when S3_BUCKET is set, local disk otherwise
+    let storage = if let Some(bucket) = config.s3_bucket.clone() {
+        let aws_cfg = aws_config::load_from_env().await;
+        let mut s3_builder = aws_sdk_s3::config::Builder::from(&aws_cfg);
+        if let Some(endpoint) = &config.s3_endpoint {
+            // Custom endpoint needed for Cloudflare R2, MinIO, etc.
+            s3_builder = s3_builder
+                .endpoint_url(endpoint)
+                .force_path_style(true);
+        }
+        let client = aws_sdk_s3::Client::from_conf(s3_builder.build());
+        let public_url = config.s3_public_url.clone().unwrap_or_else(|| {
+            let region = config.s3_region.as_deref().unwrap_or("us-east-1");
+            format!("https://{}.s3.{}.amazonaws.com", bucket, region)
+        });
+        tracing::info!("Storage: S3  bucket={}  public_url={}", bucket, public_url);
+        utils::images::StorageService::s3(client, bucket, public_url)
+    } else {
+        if let Err(e) = utils::images::ensure_upload_dir() {
+            tracing::error!("Failed to create local upload directory: {:?}", e);
+        }
+        tracing::info!("Storage: local disk (uploads/products/)");
+        utils::images::StorageService::local()
+    };
 
     let db_pool = db::init_pool(&config)
         .await
@@ -47,6 +70,7 @@ async fn main() -> Result<(), rocket::Error> {
         .manage(db_pool)
         .manage(jwt_manager)
         .manage(email_svc)
+        .manage(storage)
         .mount("/", routes![handlers::health_check, cors::preflight])
         .mount("/api", routes![
             handlers::register,
