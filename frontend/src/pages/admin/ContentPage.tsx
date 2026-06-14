@@ -11,6 +11,7 @@ import Alert from '../../components/Alert'
 const SECTION_LABELS: Record<string, string> = {
   general:       'Site Identity',
   homepage:      'Homepage Hero',
+  carousel:      'Product Carousel',
   announcements: 'Announcement Bar',
   about:         'About Page',
   contact:       'Contact Info',

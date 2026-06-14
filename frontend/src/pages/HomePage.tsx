@@ -4,6 +4,7 @@ import { productsApi } from '../api/products'
 import type { PublishedProduct } from '../types'
 import { useContent } from '../context/ContentContext'
 import ProductCard from '../components/ProductCard'
+import ProductCarousel from '../components/ProductCarousel'
 import Spinner from '../components/Spinner'
 import Alert from '../components/Alert'
 
@@ -46,9 +47,15 @@ function Hero() {
 }
 
 export default function HomePage() {
+  const { get, flag } = useContent()
   const [products, setProducts] = useState<PublishedProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const carouselEnabled  = flag('carousel_enabled')
+  const carouselTitle    = get('carousel_title', 'Featured Products')
+  const carouselCount    = Math.max(1, parseInt(get('carousel_count', '8')) || 8)
+  const carouselAutoplay = flag('carousel_autoplay')
 
   useEffect(() => {
     productsApi
@@ -64,6 +71,15 @@ export default function HomePage() {
 
       {loading && <div className="py-20"><Spinner size="lg" /></div>}
       {error   && <Alert message={error} />}
+
+      {!loading && !error && carouselEnabled && (
+        <ProductCarousel
+          products={products}
+          title={carouselTitle}
+          autoplay={carouselAutoplay}
+          maxCount={carouselCount}
+        />
+      )}
 
       {!loading && !error && (
         <>
