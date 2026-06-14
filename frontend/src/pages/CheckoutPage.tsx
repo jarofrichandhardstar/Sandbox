@@ -36,7 +36,11 @@ export default function CheckoutPage() {
       setShippingInfo(res.data)
       setStep('confirm')
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not find shipping coverage for this location')
+      if (err instanceof ApiError && err.status === 404) {
+        setError('No shipping coverage for this city / postal code. Please verify the details or contact the seller.')
+      } else {
+        setError(err instanceof ApiError ? err.message : 'Could not check shipping for this location')
+      }
     } finally {
       setEstimating(false)
     }
