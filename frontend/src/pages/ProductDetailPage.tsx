@@ -9,6 +9,7 @@ import Spinner from '../components/Spinner'
 import Alert from '../components/Alert'
 import { resolveImageUrl } from '../utils/image'
 import { useCurrency } from '../hooks/useCurrency'
+import { useContent } from '../context/ContentContext'
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -16,6 +17,8 @@ export default function ProductDetailPage() {
   const { addToCart } = useCart()
 
   const { format } = useCurrency()
+  const { get } = useContent()
+  const cartBtnColor = get('cart_button_color', '#4f46e5')
   const [product, setProduct] = useState<PublishedProduct | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -118,7 +121,8 @@ export default function ProductDetailPage() {
                 <button
                   onClick={handleAdd}
                   disabled={adding || !product.in_stock}
-                  className="flex-1 rounded-lg bg-indigo-600 py-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                  style={{ backgroundColor: cartBtnColor }}
+                  className="flex-1 rounded-lg py-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
                   {adding ? 'Adding…' : 'Add to cart'}
                 </button>

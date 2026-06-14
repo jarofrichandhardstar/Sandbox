@@ -6,11 +6,14 @@ import { useCart } from '../context/CartContext'
 import { ApiError } from '../api/client'
 import { resolveImageUrl } from '../utils/image'
 import { useCurrency } from '../hooks/useCurrency'
+import { useContent } from '../context/ContentContext'
 
 export default function ProductCard({ product }: { product: PublishedProduct }) {
   const { token } = useAuth()
   const { addToCart } = useCart()
   const { format } = useCurrency()
+  const { get } = useContent()
+  const cartBtnColor = get('cart_button_color', '#4f46e5')
   const [adding, setAdding] = useState(false)
   const [added, setAdded] = useState(false)
   const [error, setError] = useState('')
@@ -80,7 +83,8 @@ export default function ProductCard({ product }: { product: PublishedProduct }) 
           <button
             onClick={handleAdd}
             disabled={adding || !product.in_stock}
-            className="mt-1 w-full rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            style={{ backgroundColor: cartBtnColor }}
+            className="mt-1 w-full rounded-lg py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
           >
             {adding ? 'Adding…' : added ? 'Added!' : 'Add to cart'}
           </button>

@@ -18,6 +18,7 @@ const SECTION_LABELS: Record<string, string> = {
   social:        'Social Links',
   footer:        'Footer',
   currency:      'Currency',
+  shop:          'Shop UI',
 }
 
 const TYPE_LABELS: Record<ContentType, string> = {
