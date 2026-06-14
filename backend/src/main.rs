@@ -60,7 +60,7 @@ async fn main() -> Result<(), rocket::Error> {
             handlers::orders::estimate_shipping,
             handlers::content::list_public_content,
         ])
-        .mount("/api/cart", routes![
+        .mount("/api", routes![
             handlers::orders::list_cart,
             handlers::orders::add_to_cart,
             handlers::orders::update_cart_item,
