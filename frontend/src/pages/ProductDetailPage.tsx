@@ -7,6 +7,7 @@ import { useCart } from '../context/CartContext'
 import { ApiError } from '../api/client'
 import Spinner from '../components/Spinner'
 import Alert from '../components/Alert'
+import { resolveImageUrl } from '../utils/image'
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -58,9 +59,9 @@ export default function ProductDetailPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
           <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden">
-            {product.image_url ? (
+            {resolveImageUrl(product.image_url) ? (
               <img
-                src={product.image_url}
+                src={resolveImageUrl(product.image_url)}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />

@@ -69,8 +69,28 @@ pub async fn create_inventory(
 
     tracing::info!("Inventory item created: {} ({})", item.name, item.id);
 
+    // Auto-create a stock record so the item is immediately manageable
+    let stock_id = Uuid::new_v4();
+    let stock: Stock = sqlx::query_as(
+        "INSERT INTO stock (id, inventory_item_id, quantity_in_stock, reorder_level, reorder_quantity, warehouse_location, updated_at)
+         VALUES ($1, $2, 0, 10, 50, 'Default Warehouse', $3)
+         RETURNING id, inventory_item_id, quantity_in_stock, reorder_level, reorder_quantity, warehouse_location, updated_at"
+    )
+    .bind(stock_id)
+    .bind(item_id)
+    .bind(now)
+    .fetch_one(pool.inner())
+    .await
+    .map_err(|e| {
+        tracing::error!("Database error creating auto-stock: {}", e);
+        ApiError::Database(e.to_string())
+    })?;
+
+    let mut response: AdminInventoryResponse = item.into();
+    response.stock = Some(stock.into());
+
     Ok(Json(ApiResponse::ok_with_message(
-        item.into(),
+        response,
         "Inventory item created successfully",
     )))
 }

@@ -4,6 +4,7 @@ import type { PublishedProduct } from '../types'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { ApiError } from '../api/client'
+import { resolveImageUrl } from '../utils/image'
 
 export default function ProductCard({ product }: { product: PublishedProduct }) {
   const { token } = useAuth()
@@ -31,9 +32,9 @@ export default function ProductCard({ product }: { product: PublishedProduct }) 
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
       <Link to={`/products/${product.id}`} className="block">
         <div className="aspect-square bg-gray-100 overflow-hidden">
-          {product.image_url ? (
+          {resolveImageUrl(product.image_url) ? (
             <img
-              src={product.image_url}
+              src={resolveImageUrl(product.image_url)}
               alt={product.name}
               className="w-full h-full object-cover"
             />

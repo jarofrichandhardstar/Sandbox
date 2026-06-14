@@ -39,7 +39,8 @@ async fn main() -> Result<(), rocket::Error> {
 
     let figment = rocket::Config::figment()
         .merge(("address", "0.0.0.0"))
-        .merge(("port", config.port));
+        .merge(("port", config.port))
+        .merge(("limits.bytes", 8 * 1024 * 1024u64)); // 8 MB for image uploads
 
     rocket::custom(figment)
         .attach(cors::Cors)

@@ -5,6 +5,7 @@ import type { AdminInventoryResponse, AdminStockResponse } from '../../types'
 import { ApiError } from '../../api/client'
 import Spinner from '../../components/Spinner'
 import Alert from '../../components/Alert'
+import { resolveImageUrl } from '../../utils/image'
 
 export default function InventoryEditPage() {
   const { id } = useParams<{ id: string }>()
@@ -109,12 +110,17 @@ export default function InventoryEditPage() {
       warehouse_location: stockForm.warehouse_location,
     }
     try {
-      if (stock) {
-        const res = await adminApi.updateStock(stock.id, payload)
-        if (res.data) setStock(res.data)
-      } else {
-        const res = await adminApi.createStock(id!, payload)
-        if (res.data) setStock(res.data)
+      const res = stock
+        ? await adminApi.updateStock(stock.id, payload)
+        : await adminApi.createStock(id!, payload)
+      if (res.data) {
+        setStock(res.data)
+        setStockForm({
+          quantity_in_stock: res.data.quantity_in_stock.toString(),
+          reorder_level: res.data.reorder_level.toString(),
+          reorder_quantity: res.data.reorder_quantity.toString(),
+          warehouse_location: res.data.warehouse_location,
+        })
       }
       setStockSuccess('Stock updated')
     } catch (err) {
@@ -277,6 +283,7 @@ export default function InventoryEditPage() {
                     <input
                       type="number"
                       min="0"
+                      placeholder="0"
                       value={stockForm.quantity_in_stock}
                       onChange={e => setStockForm(f => ({ ...f, quantity_in_stock: e.target.value }))}
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
@@ -287,6 +294,7 @@ export default function InventoryEditPage() {
                     <input
                       type="number"
                       min="0"
+                      placeholder="10"
                       value={stockForm.reorder_level}
                       onChange={e => setStockForm(f => ({ ...f, reorder_level: e.target.value }))}
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
@@ -297,6 +305,7 @@ export default function InventoryEditPage() {
                     <input
                       type="number"
                       min="0"
+                      placeholder="50"
                       value={stockForm.reorder_quantity}
                       onChange={e => setStockForm(f => ({ ...f, reorder_quantity: e.target.value }))}
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
@@ -336,8 +345,8 @@ export default function InventoryEditPage() {
               {imageError && <Alert message={imageError} className="mb-3" />}
 
               <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
-                {item?.image_url ? (
-                  <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                {resolveImageUrl(item?.image_url) ? (
+                  <img src={resolveImageUrl(item?.image_url)} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-300">
                     <svg className="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">

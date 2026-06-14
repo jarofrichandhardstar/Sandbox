@@ -5,6 +5,7 @@ import type { AdminInventoryResponse } from '../../types'
 import { ApiError } from '../../api/client'
 import Spinner from '../../components/Spinner'
 import Alert from '../../components/Alert'
+import { resolveImageUrl } from '../../utils/image'
 
 export default function InventoryPage() {
   const [items, setItems] = useState<AdminInventoryResponse[]>([])
@@ -89,8 +90,8 @@ export default function InventoryPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-lg bg-gray-100 overflow-hidden shrink-0">
-                        {item.image_url ? (
-                          <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                        {resolveImageUrl(item.image_url) ? (
+                          <img src={resolveImageUrl(item.image_url)} alt="" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-300">
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
